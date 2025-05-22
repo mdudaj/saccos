@@ -1,0 +1,57 @@
+services:
+    app:
+        container_name: saccos_app
+        restart: always
+        build:
+            context: .
+            dockerfile: ./docker/Dockerfile
+        volumes:
+          - ./src:/app/src
+        networks:
+          - saccos_network
+        depends_on:
+          - db
+          - redis
+
+    db:
+        container_name: saccos_db
+        restart: always
+        image: postgis/postgis:latest
+        environment:
+          POSTGRES_USER: ${DB_USER}
+          POSTGRES_PASSWORD: ${DB_PASSWORD}
+          POSTGRES_DB: ${DB_NAME}
+        volumes:
+          - db_data:/var/lib/postgresql/data
+        networks:
+          - saccos_network
+
+    redis:
+        container_name: saccos_redis
+        restart: always
+        image: redis:latest
+        volumes:
+          - redis_data:/data
+        networks:
+          - saccos_network
+
+    nginx:
+        container_name: saccos_nginx
+        restart: always
+        image: nginx:latest
+        ports:
+          - "80:80"
+        volumes:
+          - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+          - ./src:/app/src
+        networks:
+          - saccos_network
+
+networks:
+    saccos_network:
+        driver: bridge
+volumes:
+    db_data:
+        driver: local
+    redis_data:
+        driver: local
