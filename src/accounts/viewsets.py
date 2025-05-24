@@ -17,10 +17,10 @@ class UserViewset(DeleteViewMixin, DetailViewMixin, ModelViewset):
     icon = Icon('person')
     model = User
     list_columns = ('email', 'first_name', 'last_name', 'is_active', 'is_staff')
-    list_searh_fields = ('email', 'first_name', 'last_name')
+    list_search_fields = ('email', 'first_name', 'last_name')
     list_filter_fields = ('is_active', 'is_staff')
 
-    queryset = User.objects.select_related().all().order_by('-created')
+    queryset = User.objects.filter(is_staff=True).order_by('-created')
 
     form_layout = Layout(
         "email",

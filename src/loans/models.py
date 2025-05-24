@@ -1,8 +1,14 @@
+# -*- encoding: utf-8 -*-
+
+from django.contrib.auth import get_user_model
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from django.contrib.auth import get_user_model
+from viewflow import jsonstore
+from viewflow.workflow.models import Process
 
 User = get_user_model()
+
+from membership.models import MemberProfile
 
 
 class TimeStampedModel(models.Model):
@@ -17,16 +23,20 @@ class LoanApplication(TimeStampedModel):
     """
     Model representing a loan application.
     """
-    applicant = models.ForeignKey(User, on_delete=models.CASCADE, related_name='loan_applications')
+    applicant = models.ForeignKey(MemberProfile, on_delete=models.CASCADE, related_name='loan_applications')
     amount = models.DecimalField(max_digits=10, decimal_places=2)
+    term = models.PositiveIntegerField(help_text=_("Term in months"))
+    interest_rate = models.DecimalField(max_digits=5, decimal_places=2, help_text=_("Interest rate in percentage"))
+    purpose = models.TextField(help_text=_("Purpose of the loan"))
     status = models.CharField(
         max_length=20,
         choices=[
+            ('new', _('New')),
             ('pending', _('Pending')),
             ('approved', _('Approved')),
             ('rejected', _('Rejected')),
         ],
-        default='pending'
+        default='new'
     )
 
     def __str__(self):
@@ -53,3 +63,15 @@ class LoanDocument(TimeStampedModel):
         verbose_name = "Loan Document"
         verbose_name_plural = "Loan Documents"
         ordering = ['-created']
+
+
+class LoanApprovalProcess(Process):
+    """
+    Workflow process for loan application approval.
+    """
+    artifact: LoanApplication
+
+    approved = jsonstore.BooleanField(default=False)
+
+    class Meta:
+        proxy = True
